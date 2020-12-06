@@ -76,3 +76,12 @@ console.log(Object.prototype.toString.call(copy))   // [object Object]
 
 ```
 
+2、跳出多层循环
+```javascript
+outer: for(let i = 0; i < 3; i++) {
+    for(let j = 0; j < 3; j++) {
+        break outer
+    }
+}
+```
+
