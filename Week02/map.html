@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>map</title>
+        <style>
+            #container {
+                width: 701px;
+                font-size: 0px;
+            }
+            .cell {
+                display: inline-block;
+                width: 6px;
+                height: 6px;
+                line-height: 6px;
+                background-color: rgba(180, 180, 180);
+                border-bottom: 1px solid white;
+                border-right: 1px solid white;
+                vertical-align: middle;
+            }
+            .cell.block {
+                background-color: black;
+            }
+            .cell.green {
+                background-color: green;
+            }
+            .cell.highlight {
+                background-color: #ff6633;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <button onclick="localStorage['map'] = JSON.stringify(map)">save</button>
+        <script>
+            function getMapIndex(y, x) {
+                return y * 100 + x
+            }
+            let map = localStorage['map'] ? JSON.parse(localStorage['map']) : new Array(10000).fill(0)
+
+            let container = document.getElementById('container')    
+            for(let y = 0; y < 100; y++) {
+                for(let x = 0; x < 100; x++) {
+                    let cell = document.createElement('div')
+                    cell.setAttribute('id', `cell_${getMapIndex(y, x)}`)
+                    cell.classList.add('cell')
+
+                    if(map[getMapIndex(y, x)] === 1) {  // 有墙
+                        cell.classList.add('block')
+                    }
+                    cell.addEventListener('mousemove', () => {
+                        if(mousedown) {
+                            if(clear) {
+                                cell.classList.remove('block')
+                                map[getMapIndex(y, x)] = 0
+                            } else {
+                                cell.classList.add('block')
+                                map[getMapIndex(y, x)] = 1
+                            }
+                        }
+                    })
+                    container.appendChild(cell)
+                }
+            }
+
+            let mousedown = false
+            let clear = false   
+            document.addEventListener('mousedown', (e) => {
+                mousedown = true
+                if(e.which === 3) {     // 右键 清除
+                    clear = true
+                } else {
+                    clear = false
+                }
+            })
+            document.addEventListener('mouseup', () => {
+                mousedown = false
+            })
+            document.addEventListener('contextmenu', (e) => {   // 阻止 右键-菜单栏的默认事件 
+                return e.preventDefault()
+            })
+
+
+            function sleep(duration) {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        return resolve()
+                    }, duration)
+                })
+            }
+
+            class Sorted {
+                constructor(data = [], compare = (a, b) => a - b) {
+                    this.data = data.slice()
+                    this.compare = compare
+                }
+                get length() {
+                    return this.data.length
+                }
+                give(item) {
+                    this.data.push(item)
+                }
+                take() {
+                    if(!this.data.length) {
+                        return    // 不是 return null
+                    }
+                    let min = this.data[0]
+                    let minIndex = 0
+                    for(let i = 1; i < this.data.length; i++) {
+                        if (this.compare(this.data[i], min) < 0) {
+                            min = this.data[i]
+                            minIndex = i
+                        }
+                    }
+
+                    // 将数组中某一项删除
+                    // 将 最后一项 和 需要删除项 进行交换，然后删除最后一项
+                    // 不用splice，因为使用splice，会导致后面项往前移动，影响性能
+                    this.data[minIndex] = this.data[this.data.length - 1]
+                    this.data.pop()
+
+                    return min
+                }
+            }
+            // 距离函数
+            // source-源节点    target-目标节点
+            function distance(source, target) {
+                return (target[0] - source[0]) ** 2 + (target[1] - source[1]) ** 2
+            }
+
+
+            // 寻路算法  广度优先
+            // start / end: [y, x]
+            async function findPath(map, start, end) {
+                // 判断起始节点和终点节点是否是地图范围内
+                if(!isValidMapPoint(start[0], start[1]) || !isValidMapPoint(end[0], end[1])) {
+                    return
+                }
+                // 判断起始节点和终点节点是否为墙
+                let si = getMapIndex(start)
+                let ei = getMapIndex(end)
+                if(map[si] === 1 || map[ei] === 1) {
+                    return
+                }
+
+                let table = Object.create(map)
+
+                // let queue = [start]     // 先进先出
+                let queue = new Sorted([start], (ma, mb) => {
+                    return distance(ma, end) - distance(mb, end)
+                })
+                let doFind = false
+                while(queue.length) {
+                    if (doFind) {
+                        let path = []
+                        let [y, x] = end
+                        while(y !== start[0] || x !== start[1]) {
+                            let idx = getMapIndex(y, x)
+                            path.push(idx);  // 分号 分隔下一行
+                            [y, x] = table[idx]
+                            idx = getMapIndex(y, x)
+                            document.getElementById(`cell_${idx}`).classList.add('highlight')
+                            await sleep(30); 
+                        }
+                        return path
+                    }
+                    
+                    // let [y, x] = queue.shift()
+                    let [y, x] = queue.take()   // 取出 当前可达节点中距离最小的节点
+                    // 向queue插入当前节点的四个方向
+                    await insert(y - 1, x, [y, x])
+                    await insert(y, x + 1, [y, x])
+                    await insert(y + 1, x, [y, x])
+                    await insert(y, x - 1, [y, x])
+
+                    await insert(y - 1, x - 1, [y, x])
+                    await insert(y - 1, x + 1, [y, x])
+                    await insert(y + 1, x - 1, [y, x])
+                    await insert(y + 1, x + 1, [y, x])
+                }
+
+                return null
+
+                // 向queue中插入节点，表示这个节点已经走过
+                async function insert(y, x, pre) {
+                    if (!isValidMapPoint(y, x)) {   // 出地图范围
+                        return
+                    }
+
+                    let index = getMapIndex(y, x)
+                    // if (map[index] > 0) {   // 是 墙 或者 已走过
+                    //     return
+                    // }
+                    if(table[index]) {  // 是 墙
+                        return
+                    }
+
+                    // if(table[index]) {
+                    //     let originPre = table[index];
+                    //     if(distance(pre, start) < distance(originPre, start)) {
+                    //         // let prePre = table[getMapIndex(pre[0], pre[1])]
+                    //         // if (prePre[0] !== y || prePre[1] !== x) {
+                    //         //     console.log('shorter', `[${y},${x}]`, pre, originPre)
+                    //         //     table[index] = pre;
+                    //         // }
+                    //         console.log('shorter', `[${y},${x}]`, pre, originPre)
+                    //         table[index] = pre;
+                    //     }
+                    //     return
+                    // }
+                    table[index] = pre
+                    // queue.push([y, x])
+                    queue.give([y, x]);
+                    document.getElementById(`cell_${index}`).classList.add('green')
+
+                    // 将判断是否终点节点的逻辑放在这里，可以减少while循环次数
+                    if(y === end[0] && x === end[1]) {    
+                        doFind = true
+                        document.getElementById(`cell_${index}`).classList.add('highlight')
+                    }
+                    await sleep(30)
+                }
+                // 判断是否是有效地图节点
+                function isValidMapPoint(y, x) {
+                    if (x >= 0 && x < 100 && y >= 0 && y < 100) {   // 出地图范围
+                        return true
+                    }
+                    return false
+                }
+            }
+
+
+            findPath(map, [0, 0], [50, 50])
+        </script>
+    </body>
+</html>
