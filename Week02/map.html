@@ -143,82 +143,109 @@
                     return
                 }
 
-                let table = Object.create(map)
+                
 
                 // let queue = [start]     // 先进先出
                 let queue = new Sorted([start], (ma, mb) => {
                     return distance(ma, end) - distance(mb, end)
                 })
+                let table = Object.create(map)
+                table[getMapIndex(start[0], start[1])] = {node:start, step: 0}
+
                 let doFind = false
                 while(queue.length) {
-                    if (doFind) {
+                    // if (doFind) {
+                    //     let path = []
+                    //     let [y, x] = end
+                    //     while(y !== start[0] || x !== start[1]) {
+                    //         let idx = getMapIndex(y, x)
+                    //         path.push(idx);  // 分号 分隔下一行
+                    //         [y, x] = table[idx].node
+                    //         idx = getMapIndex(y, x)
+                    //         document.getElementById(`cell_${idx}`).classList.add('highlight')
+                    //         await sleep(30); 
+                    //     }
+                    //     return path
+                    // }
+                    
+                    // let [y, x] = queue.shift()
+                    let [y, x] = queue.take()   // 取出 当前可达节点中距离最小的节点
+                    map[getMapIndex(y, x)] = 2 // 代表已经走过
+
+                    if(y === end[0] && x === end[1]) {
                         let path = []
-                        let [y, x] = end
                         while(y !== start[0] || x !== start[1]) {
                             let idx = getMapIndex(y, x)
                             path.push(idx);  // 分号 分隔下一行
-                            [y, x] = table[idx]
+                            [y, x] = table[idx].node
                             idx = getMapIndex(y, x)
                             document.getElementById(`cell_${idx}`).classList.add('highlight')
                             await sleep(30); 
                         }
                         return path
                     }
-                    
-                    // let [y, x] = queue.shift()
-                    let [y, x] = queue.take()   // 取出 当前可达节点中距离最小的节点
-                    // 向queue插入当前节点的四个方向
-                    await insert(y - 1, x, [y, x])
-                    await insert(y, x + 1, [y, x])
-                    await insert(y + 1, x, [y, x])
-                    await insert(y, x - 1, [y, x])
 
-                    await insert(y - 1, x - 1, [y, x])
-                    await insert(y - 1, x + 1, [y, x])
-                    await insert(y + 1, x - 1, [y, x])
-                    await insert(y + 1, x + 1, [y, x])
+                    // 向queue插入当前节点的四个方向
+                    // await insert(y - 1, x, [y, x])
+                    // await insert(y, x + 1, [y, x])
+                    // await insert(y + 1, x, [y, x])
+                    // await insert(y, x - 1, [y, x])
+                    // await insert(y - 1, x - 1, [y, x])
+                    // await insert(y - 1, x + 1, [y, x])
+                    // await insert(y + 1, x - 1, [y, x])
+                    // await insert(y + 1, x + 1, [y, x])
+
+                    await insert(y - 1, x, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
+                    await insert(y, x + 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
+                    await insert(y + 1, x, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
+                    await insert(y, x - 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
+
+                    // await insert(y - 1, x - 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
+                    // await insert(y - 1, x + 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
+                    // await insert(y + 1, x - 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
+                    // await insert(y + 1, x + 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
                 }
 
                 return null
 
                 // 向queue中插入节点，表示这个节点已经走过
+                // pre = { node: [], step:0 }  step表示从起点走到该节点的步数
                 async function insert(y, x, pre) {
                     if (!isValidMapPoint(y, x)) {   // 出地图范围
                         return
                     }
 
                     let index = getMapIndex(y, x)
-                    // if (map[index] > 0) {   // 是 墙 或者 已走过
+                    // if (table[index]) {   // 是 墙 或者 已判断过可达
                     //     return
                     // }
-                    if(table[index]) {  // 是 墙
+                    if(table[index] == 1 || map[index] == 2) {  // 排除掉 墙节点 以及 已经走过的节点
                         return
                     }
 
-                    // if(table[index]) {
-                    //     let originPre = table[index];
-                    //     if(distance(pre, start) < distance(originPre, start)) {
-                    //         // let prePre = table[getMapIndex(pre[0], pre[1])]
-                    //         // if (prePre[0] !== y || prePre[1] !== x) {
-                    //         //     console.log('shorter', `[${y},${x}]`, pre, originPre)
-                    //         //     table[index] = pre;
-                    //         // }
-                    //         console.log('shorter', `[${y},${x}]`, pre, originPre)
-                    //         table[index] = pre;
-                    //     }
-                    //     return
-                    // }
+                    console.log(`(${y}, ${x})`, pre.node, pre.step)
+
+                    if(table[index]) {  // 已经判断过可达
+                        let originPre = table[index]
+                        // 判断两个pre哪个更好
+                        if(pre.step < originPre.step) {
+                            table[index] = pre
+                        }
+                        return
+                    }
+
                     table[index] = pre
                     // queue.push([y, x])
                     queue.give([y, x]);
                     document.getElementById(`cell_${index}`).classList.add('green')
 
                     // 将判断是否终点节点的逻辑放在这里，可以减少while循环次数
-                    if(y === end[0] && x === end[1]) {    
-                        doFind = true
-                        document.getElementById(`cell_${index}`).classList.add('highlight')
-                    }
-                    await sleep(30)
+                    // 但是这样找到的路径不一定是最佳路径
+                    // if(y === end[0] && x === end[1]) {    
+                    //     doFind = true
+                    //     document.getElementById(`cell_${index}`).classList.add('highlight')
+                    // }
+                    // await sleep(30)
                 }
                 // 判断是否是有效地图节点
                 function isValidMapPoint(y, x) {
