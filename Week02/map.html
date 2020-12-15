@@ -88,6 +88,89 @@
                     }, duration)
                 })
             }
+            // 最小堆
+            class BinaryHeap { 
+                constructor(compare = (a, b) => a - b) { 
+                    this.tree = []      // 存储完全二叉树
+                    this.compare = compare  // 堆内元素的比对方法
+                }
+                // 取出堆顶元素
+                take() { 
+                    if (!this.tree || !this.tree.length) { 
+                        return
+                    }
+                    if (this.tree.length === 1) {
+                        return this.tree.shift()
+                    }
+                    let last = this.tree.pop()  // 堆顶 和 最后一个元素，进行交换
+                    let first = this.tree[0]
+                    this.tree[0] = last
+
+                    // 向下调整
+                    this.downAdjust()
+
+                    return first
+                }
+                give(item) { 
+                    this.tree.push(item)
+                    this.upAdjust()
+                    // TODO 向上调整
+                }
+                // 向下调整
+                downAdjust() { 
+                    let i = 0
+                    while (i < this.tree.length) { 
+                        let parent = this.tree[i]
+                        let leftChild = this.tree[2 * i + 1]
+                        let rightChild = this.tree[2 * i + 2]
+                        
+                        if (leftChild === undefined) { 
+                            return
+                        }
+                        let theMin = leftChild
+                        let theMinI = 2 * i + 1
+                        if (rightChild && this.compare(leftChild, rightChild) > 0) { 
+                            theMin = rightChild
+                            theMinI = 2 * i + 2
+                        }
+
+                        if (this.compare(parent, theMin) > 0) {
+                            [this.tree[i], this.tree[theMinI]] = [theMin, parent]
+                            i = theMinI
+                        } else { 
+                            return
+                        }
+                    }
+                    return
+                }
+                // 向上调整
+                upAdjust() {
+                    let i = this.tree.length - 1
+                    
+                    while (i > 0) { 
+                        let value = this.tree[i]
+
+                        let parentI = i % 2 === 0 ? (i - 2) / 2 : (i - 1) / 2    // i % 2 能整除的是右子树
+                        let parent = this.tree[parentI]
+
+                        if (this.compare(parent, value) > 0) {
+                            [this.tree[parentI], this.tree[i]] = [value, parent]
+                            i = parentI
+                        } else { 
+                            return
+                        }
+                    }
+                    return
+                }
+
+                show() { 
+                    console.log(this.tree)
+                }
+
+                get length() {
+                    return this.tree.length
+                }
+            }
 
             class Sorted {
                 constructor(data = [], compare = (a, b) => a - b) {
@@ -122,6 +205,7 @@
                     return min
                 }
             }
+            
             // 距离函数
             // source-源节点    target-目标节点
             function distance(source, target) {
@@ -146,9 +230,14 @@
                 
 
                 // let queue = [start]     // 先进先出
-                let queue = new Sorted([start], (ma, mb) => {
+                // let queue = new Sorted([start], (ma, mb) => {
+                //     return distance(ma, end) - distance(mb, end)
+                // })
+                let queue = new BinaryHeap((ma, mb) => {
                     return distance(ma, end) - distance(mb, end)
                 })
+                queue.give(start)
+
                 let table = Object.create(map)
                 table[getMapIndex(start[0], start[1])] = {node:start, step: 0}
 
