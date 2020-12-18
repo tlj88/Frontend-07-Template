@@ -88,7 +88,7 @@
                     }, duration)
                 })
             }
-            // 最小堆
+            // 最小堆 自己实现版本
             class BinaryHeap { 
                 constructor(compare = (a, b) => a - b) { 
                     this.tree = []      // 存储完全二叉树
@@ -169,6 +169,60 @@
 
                 get length() {
                     return this.tree.length
+                }
+            }
+
+            // 最小堆 老师优化版本
+            class OptimizeBinaryHeap {
+                constructor(data, compare) {
+                    this.data = data
+                    this.compare = compare || ((a, b) => a - b)
+                }
+                take() {
+                    if(!this.data.length) {
+                        return
+                    }
+                    let min = this.data[0]
+                    let i = 0
+                    while(i < this.data.length) {
+                        if(2 * i + 1 > this.data.length) {
+                            break
+                        }
+                        if(2 * i + 2 > this.data.length) {
+                            this.data[i] = this.data[2 * i + 1]
+                            i = 2 * i + 1
+                            break
+                        }
+                        if(this.compare(this.date[2 * i + 1], this.data[2 * i + 2]) < 0) {
+                            this.data[i] = this.data[2 * i + 1]
+                            i = 2 * i + 1
+                        } else {
+                            this.data[i] = this.data[2 * i + 2]
+                            i = 2 * i + 2
+                        }
+                    }
+                    if(i < this.data.length - 1) {
+                        this.insertAt(i, this.data.pop())
+                    } else {
+                        this.data.pop()
+                    }
+
+                    return min
+                }
+                insertAt(i, v) {
+                    this.data[i] = v
+                    while(i > 0 && this.compare(v, this.data[Math.floor((i-1) / 2)]) < 0) {
+                        this.data[i] = this.data[Math.floor((i-1) / 2)]
+                        this.data[Math.floor((i-1) / 2)] = v
+                        i = Math.floor((i-1) / 2)
+                    }
+                }
+                insert(v) {
+                    console.log(v)
+                    this.insertAt(this.data.length, v)
+                }
+                get length() {
+                    return this.data.length
                 }
             }
 
@@ -284,15 +338,15 @@
                     // await insert(y + 1, x - 1, [y, x])
                     // await insert(y + 1, x + 1, [y, x])
 
-                    await insert(y - 1, x, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
-                    await insert(y, x + 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
-                    await insert(y + 1, x, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
-                    await insert(y, x - 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
+                    await insert(y - 1, x, { node: [y, x], step: table[getMapIndex(y, x)].step + 10 })
+                    await insert(y, x + 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 10 })
+                    await insert(y + 1, x, { node: [y, x], step: table[getMapIndex(y, x)].step + 10 })
+                    await insert(y, x - 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 10 })
 
-                    // await insert(y - 1, x - 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
-                    // await insert(y - 1, x + 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
-                    // await insert(y + 1, x - 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
-                    // await insert(y + 1, x + 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 1 })
+                    await insert(y - 1, x - 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 14 })
+                    await insert(y - 1, x + 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 14 })
+                    await insert(y + 1, x - 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 14 })
+                    await insert(y + 1, x + 1, { node: [y, x], step: table[getMapIndex(y, x)].step + 14 })
                 }
 
                 return null
