@@ -1,3 +1,4 @@
+const kmp = require('./kmp')
 /**
  * 模式匹配：判断source是否匹配pattern，匹配返回true，否则返回false
  *
@@ -34,17 +35,21 @@ function wildcard(source, pattern) {
     // 分段进行匹配
     for (let j = 0; j < starPosition.length - 1; j++) { 
         let subPattern = pattern.slice(starPosition[j] + 1, starPosition[j + 1])    // subPattern中不包含*
-        subPattern = subPattern.replace(/\?/g, '[\\s\\S]')
+        // subPattern = subPattern.replace(/\?/g, '[\\s\\S]')  // KMP如何处理?号
         console.log('subPattern', subPattern)
 
-        let regExp = new RegExp(subPattern, 'g')
-        regExp.lastIndex = lastIndex
+        // let regExp = new RegExp(subPattern, 'g')
+        kmp.lastIndex = lastIndex
         console.log('lastIndex', lastIndex)
 
-        if (!regExp.exec(source)) { 
+        // if (!regExp.exec(source)) { 
+        //     return false
+        // }
+        if (!kmp(source, subPattern)) { 
             return false
         }
-        lastIndex = regExp.lastIndex
+        // lastIndex = regExp.lastIndex
+        lastIndex = kmp.lastIndex
     }
 
     // 判断最后一段内容
@@ -59,7 +64,7 @@ function wildcard(source, pattern) {
 }
 
 // console.log(wildcard('heloo', 'heloo'))
-console.log(wildcard('abkf*gdaffdeadfge', 'ab*d?f*fde*ad??e'))
+console.log(wildcard('abkfgdaffdeadfge', 'ab*d?f*fde*ad??e'))
 
 
 
