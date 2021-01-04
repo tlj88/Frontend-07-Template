@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>拖拽</title>
+    </head>
+    <body>
+        <div id="container">
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+            文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字 文字
+        </div>
+        <div id="dragable" style="display: inline-block; width: 100px; height: 100px; background-color: #00aaff; font-size: 0px;"></div>
+    </body>
+</html>
+
+<script>
+let dragable = document.getElementById('dragable')
+let baseX = 0
+let baseY = 0
+/**
+ * 1、将mousemove、mouseup事件绑定放在mousedown事件回调中
+ * 2、mousemove、mouseup事件是绑定到document上，而不是拖拽对象上。若绑定到拖拽对象上，则鼠标在拖拽对象上时才生效。
+ */
+dragable.addEventListener('mousedown', (event) => {
+    let startX = event.clientX
+    let startY = event.clientY
+    let timer = null
+
+    let moveHandler = (event) => {
+        // console.log('move', event.clientX, event.clientY)
+        // dragable.style.transform = `translate(${baseX + event.clientX - startX}px, ${baseY + event.clientY - startY}px)`
+        
+        if(timer) {
+           return
+        }
+        timer = setTimeout(() => {
+            let range = getNearest(event.clientX, event.clientY)
+            range.insertNode(dragable)
+            timer = null
+        }, 50)
+    }
+    let upHandler = (event) => {
+        baseX += event.clientX - startX
+        baseY += event.clientY - startY
+        document.removeEventListener('mousemove', moveHandler)
+        document.removeEventListener('mouseup', upHandler)
+    }
+
+    document.addEventListener('mousemove', moveHandler)
+    document.addEventListener('mouseup', upHandler)
+})
+
+document.addEventListener('selectstart', e => e.preventDefault())
+
+let ranges = []
+let container = document.getElementById('container')
+console.log(container.childNodes[0].textContent.length)
+for(let i = 0; i < container.childNodes[0].textContent.length; i++){
+    let range = document.createRange()
+    range.setStart(container.childNodes[0], i)
+    range.setEnd(container.childNodes[0], i)
+    ranges.push(range)
+    console.log('range', range)
+}
+
+function getNearest(x, y) {
+    let min = Infinity
+    let minRange = null
+    for(let range of ranges) {
+        let rect = range.getBoundingClientRect()
+        let distance = (x - rect.left) ** 2 + (y - rect.top) ** 2
+        if(distance < min) {
+            min = distance
+            minRange = range
+        }
+    }
+    return minRange
+}
+
+</script>
