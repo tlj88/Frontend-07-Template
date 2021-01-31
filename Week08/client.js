@@ -81,19 +81,19 @@ class ResponseParser {
     }
     reveiveChar(char) {
         if(this.current === this.WAITING_STATUS_LINE) {
-            if(char === '/r') {
+            if(char === '\r') {
                 this.current = this.WAITING_STATUS_LINE_END
             } else {
                 this.statusLine += char
             }
         } else if(this.current === this.WAITING_STATUS_LINE_END) {
-            if(char === '/n') {
+            if(char === '\n') {
                 this.current = this.WAITING_HEADER_NAME
             } else {
-                // TODO 不是 /n 怎么处理呢？ 要抛错误吗？
+                // TODO 不是 \n 怎么处理呢？ 要抛错误吗？
             }
         } else if(this.current === this.WAITING_HEADER_NAME) {
-            if(char === '/r') {
+            if(char === '\r') {
                 this.current = this.WAITING_HEADER_BLOCK_END
                 if(this.headers['Transfer-Encoding'] === 'chunked') {
                     this.bodyParser = new TrunkedBodyParser()
@@ -112,7 +112,7 @@ class ResponseParser {
                 // TODO 要抛错误吗？
             }
         } else if(this.current === this.WAITING_HEADER_VALUE) {
-            if(char === '/r') {
+            if(char === '\r') {
                 this.current = this.WAITING_HEADER_LINE_END
                 this.headers[this.headerName] = this.headerValue
                 this.headerName = ''
@@ -121,13 +121,13 @@ class ResponseParser {
                 this.headerValue += char
             }
         } else if(this.current === this.WAITING_HEADER_LINE_END) {
-            if(char === '/n') {
+            if(char === '\n') {
                 this.current = this.WAITING_HEADER_NAME
             } else {
                 // TODO 抛错误吗
             }
         } else if(this.current === this.WAITING_HEADER_BLOCK_END) {
-            if(char === '/n') {
+            if(char === '\n') {
                 this.current = this.WAITING_BODY
             } else {
                 // TODO 抛错误吗？
@@ -168,7 +168,7 @@ class TrunkedBodyParser{
     }
     receiveChar(char) {
         if(this.current === this.WAITING_LENGTH) {
-            if(char === '/r') {
+            if(char === '\r') {
                 this.current = this.WAITING_LENGTH_LINE_END
                 if(this.length === 0) {
                     this.isFinished = true
@@ -178,7 +178,7 @@ class TrunkedBodyParser{
                 this.length += parseInt(char, 16)
             }
         } else if(this.current === this.WAITING_LENGTH_LINE_END) {
-            if(char === '/n') {
+            if(char === '\n') {
                 this.current = this.READING_CHUNK
             }
         } else if(this.current === this.READING_CHUNK) {
@@ -188,11 +188,11 @@ class TrunkedBodyParser{
                 this.current = this.WAITING_NEW_LINE
             }
         } else if(this.current === this.WAITING_NEW_LINE) {
-            if(char === '/r') {
+            if(char === '\r') {
                 this.current = this.WAITING_NEW_LINE_END
             }
         } else if(this.current === this.WAITING_NEW_LINE_END) {
-            if(char === '/n') {
+            if(char === '\n') {
                 this.current = this.WAITING_LENGTH
             }
         }
@@ -218,6 +218,8 @@ void async function () {
 
 
 /**
+ * HTTP解析步骤
+ * 
  * 第一步：构造HTTP请求
  *  设计一个HTTP请求的类
  *  content type是一个必要的字段，要有默认值
