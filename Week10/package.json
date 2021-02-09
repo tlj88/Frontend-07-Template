@@ -1,0 +1,17 @@
+{
+  "name": "week09",
+  "version": "1.0.0",
+  "description": "",
+  "main": "HtmlParser.js",
+  "dependencies": {
+    "css": "^3.0.0",
+    "images": "^3.2.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
